@@ -1,4 +1,4 @@
-##BBDD_SNPs_laura
+## BBDD_SNPs_laura
 
 Scripts para generar y manipular una BBDD "home-made" de SNPs.
 
