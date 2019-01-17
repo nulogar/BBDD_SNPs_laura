@@ -1,6 +1,7 @@
 #!/usr/bin/python
 """
-Para obtener archivo .phy de entrada para RAxML. Se necesita archivo con las rutas a todas las cepas a incluir y la BBDD de SNPs generada con exactamente esas cepas
+Para obtener archivo .phy de entrada para RAxML. Se necesita archivo con las rutas a todas las cepas a incluir y, si se quieren obtener solo las 
+posiones variables, la BBDD de SNPs generada con exactamente esas cepas. Si no se incluye BBDD se utilizara la longitud total del genoma de referencia
 """
 
 import sys, getopt, os.path
@@ -10,11 +11,11 @@ import sys, getopt, os.path
 def help() :  
 	"""Ayuda sobre opciones del script en linea de comandos""" 
 	print "Ayuda:"
-	print "Para obtener archivo .phy de entrada para RAxML a partir de las rutas a las cepas a incluir y BBDD de SNPs de exactamente esas cepas." 
+	print "Para obtener archivo .phy de entrada para RAxML a partir de las rutas a las cepas a incluir y, en caso de querer solo posiciones variables, la BBDD de SNPs de exactamente esas cepas." 
 	print "usage:",sys.argv[0], "[options]"  
 	print " -h this message."
 	print " -r paths file. Archivo con las rutas de las cepas a incluir."
-	print " -b database file. Archivo de la BBDD de SNPs. Generada con todas las cepas a incluir y ninguna mas."  
+	print " -b database file. Opcional. Archivo de la BBDD de SNPs. Generada con todas las cepas a incluir y ninguna mas. Si no se incluye se usa la longitud del genoma de referencia"  
 	print " -a ancestor. Si se activa se incluye una cepa ancestro (sin SNPs)"
 	print " -o output file. Archivo de salida .phy."
 
@@ -30,7 +31,7 @@ except getopt.GetoptError as err:
 
 
 rutasfile = ''
-BDfile = ''
+BDfile = 0
 outfile = ''
 a=0
 
@@ -59,12 +60,15 @@ except IOError:
 	help()
 	sys.exit(2)
 
-try:
-	BD = open(BDfile)
-except IOError:
-	print("%s does not exist!!" % BDfile)
-	help()
-	sys.exit(2)
+if BDfile !=0:
+	try:
+		BD = open(BDfile)
+	except IOError:
+		print("%s does not exist!!" % BDfile)
+		help()
+		sys.exit(2)
+else:
+	print("No se ha especificado una BBDD de snps. Se utiliza la longitud de genoma completo del ancestro (4411532 posiciones)")
 
 try:
 	output = open(outfile,'w')
@@ -107,12 +111,16 @@ def comparar(cepaFile):
 
 
 
-#Extraer los SNPs de la BBDD
-bbdd = []
-for line in BD:
-	line=line.rstrip()
-	bbdd.append(int(line))
-BD.close()
+#Extraer los SNPs de la BBDD si se proporciona
+if BDfile != 0:
+	bbdd = []
+	for line in BD:
+		line=line.rstrip()
+		bbdd.append(int(line))
+	BD.close()
+#Si no hay BBDD, se genera lista con toda la longitud del genoma de referencia (4411532). Esto es poco eficiente en cuanto a RAM, pero simplifica el script
+else:
+	bbdd = list(range(1,4411533))
 
 #print bbdd
 
@@ -139,7 +147,8 @@ for i in rutasList:
 
 output.close()
 
-print ("Snps en BBDD: "+str(len(bbdd)))
+if BDfile != 0:
+	print ("SNPs en BBDD: "+str(len(bbdd)))
 print ("Cepas en BBDD: "+str(len(rutasList)))
 if a==1:
 	print("Ancestro incluido en archivo de salida")
